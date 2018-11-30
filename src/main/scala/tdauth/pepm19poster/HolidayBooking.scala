@@ -46,8 +46,8 @@ object HolidayBooking extends App {
   def dontBookAnything: PartialFunction[Throwable, HolidayLocation] = {
     case _ => AtHome
   }
-  def letterToFamily(location: HolidayLocation) { println(location.familyLetter) }
-  def letterToFriends(location: HolidayLocation) { println(location.friendsLetter) }
+  def letterToFamily(location: HolidayLocation) { println(s"Send letter to family: ${location.familyLetter}") }
+  def letterToFriends(location: HolidayLocation) { println(s"Send letter to friends: ${location.friendsLetter}") }
 
   case class HolidayLocation(price: Double, name: String, currency: String) {
     def familyLetter = s"Dear family, I am going to $name."
