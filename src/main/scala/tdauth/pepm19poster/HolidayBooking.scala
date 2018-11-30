@@ -1,7 +1,8 @@
 package tdauth.pepm19poster
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /**
   * We want to find the best location in Switzerland for holidays but we have a limited budget in EUR.
@@ -23,12 +24,9 @@ object HolidayBooking extends App {
     .filter(budgetIsSufficient)
   val x3 = x1.fallbackTo(x2) // L1
   val x4 = x3.map(bookHoliday).recover(dontBookAnything) // L2
-  x4.foreach(informMyFamily) // L3
-  val copy1 = x4
-  val copy2 = x4 // L3
-
-  println(s"Copy 1: $copy1")
-  println(s"Copy 2: $copy2")
+  x4.foreach(letterToFamily)
+  x4.foreach(letterToFriends) // L3
+  Await.ready(x4, Duration.Inf);
 
   // Make the price higher for the USA, to get Switzerland as result.
   def holidayLocationSwitzerland() = Future { HolidayLocation(600, "Switzerland", "CHF") }
@@ -48,16 +46,16 @@ object HolidayBooking extends App {
   def dontBookAnything: PartialFunction[Throwable, HolidayLocation] = {
     case _ => AtHome
   }
-  def informMyFamily(location: HolidayLocation) { println(location.familyMsg) }
+  def letterToFamily(location: HolidayLocation) { println(location.familyLetter) }
+  def letterToFriends(location: HolidayLocation) { println(location.friendsLetter) }
 
   case class HolidayLocation(price: Double, name: String, currency: String) {
-    def bookMsg = s"Lets book $name for $price $currency."
-    def familyMsg = s"Dear family, I am going to $name."
-    override def toString: String = bookMsg
+    def familyLetter = s"Dear family, I am going to $name."
+    def friendsLetter = s"Lets book $name for $price $currency. Join me in my holidays!"
   }
   object AtHome extends HolidayLocation(0.0, "at home", "EUR") {
-    override def bookMsg = "Don't book anything."
-    override def familyMsg = "Dear family, please send me more money."
+    override def familyLetter = "Dear family, please send me more money."
+    override def friendsLetter = "Don't book anything, I am staying at home."
   }
 
   case class HolidayLocationAndRating(location: HolidayLocation, rating: Double)
