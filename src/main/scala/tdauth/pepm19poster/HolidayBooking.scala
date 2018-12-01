@@ -22,11 +22,15 @@ object HolidayBooking extends App {
   val x2 = holidayLocationUSA()
     .flatMap(currencyRating)
     .filter(budgetIsSufficient)
-  val x3 = x1.fallbackTo(x2) // L1
-  val x4 = x3.map(bookHoliday).recover(dontBookAnything) // L2
+  val x3 = x1.fallbackTo(x2) // I1, I2 and I3
+  val x4 = x3.map(bookHoliday).recover(dontBookAnything)
   x4.foreach(letterToFamily)
-  x4.foreach(letterToFriends) // L3
-  Await.ready(x4, Duration.Inf);
+  x4.foreach(letterToFriends) // I4
+  val r1 = Await.result(x4, Duration.Inf)
+  val r2 = Await.result(x4, Duration.Inf) // I5
+
+  println(r1)
+  println(r2)
 
   // Make the price higher for the USA, to get Switzerland as result.
   def holidayLocationSwitzerland() = Future { HolidayLocation(600, "Switzerland", "CHF") }
@@ -46,8 +50,8 @@ object HolidayBooking extends App {
   def dontBookAnything: PartialFunction[Throwable, HolidayLocation] = {
     case _ => AtHome
   }
-  def letterToFamily(location: HolidayLocation) { println(s"Send letter to family: ${location.familyLetter}") }
-  def letterToFriends(location: HolidayLocation) { println(s"Send letter to friends: ${location.friendsLetter}") }
+  def letterToFamily(location: HolidayLocation) { println(s"Send a letter to family: ${location.familyLetter}") }
+  def letterToFriends(location: HolidayLocation) { println(s"Send a letter to friends: ${location.friendsLetter}") }
 
   case class HolidayLocation(price: Double, name: String, currency: String) {
     def familyLetter = s"Dear family, I am going to $name."
