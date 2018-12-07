@@ -23,7 +23,7 @@ object HolidayBooking extends App {
     .flatMap(currencyRating)
     .filter(budgetIsSufficient)
   val x3 = x1.fallbackTo(x2) // I1, I2 and I3
-  val x4 = x3.map(bookHoliday).recover(dontBookAnything)
+  val x4 = x3.map(bookHoliday).fallbackTo(dontBookAnything())
   x4.foreach(letterToFamily)
   x4.foreach(letterToFriends) // I4
   val r1 = Await.result(x4, Duration.Inf)
@@ -38,8 +38,9 @@ object HolidayBooking extends App {
   def holidayLocationUSA() = Future { HolidayLocation(600, "the USA", "USD") }
 
   def currencyRating(location: HolidayLocation) = location match {
-    case HolidayLocation(_, _, "CHF") => Future { HolidayLocationAndRating(location, 1.13) }
-    case HolidayLocation(_, _, "USD") => Future { HolidayLocationAndRating(location, 1.14) }
+    // The futures with the values emulate requests to an external server which returns the currency ratings.
+    case HolidayLocation(_, _, "CHF") => Future { 1.13 }.map(rating => HolidayLocationAndRating(location, rating))
+    case HolidayLocation(_, _, "USD") => Future { 1.14 }.map(rating => HolidayLocationAndRating(location, rating))
     case _                            => Future.failed(new RuntimeException("Unknown currency!"))
   }
 
@@ -47,9 +48,7 @@ object HolidayBooking extends App {
 
   def bookHoliday(locationAndRating: HolidayLocationAndRating) =
     locationAndRating.location
-  def dontBookAnything: PartialFunction[Throwable, HolidayLocation] = {
-    case _ => AtHome
-  }
+  def dontBookAnything() = Future.successful(AtHome)
   def letterToFamily(location: HolidayLocation) { println(s"Send a letter to family: ${location.familyLetter}") }
   def letterToFriends(location: HolidayLocation) { println(s"Send a letter to friends: ${location.friendsLetter}") }
 
